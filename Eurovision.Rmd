@@ -1,0 +1,81 @@
+---
+title: "Eurovision"
+author: "Lusine Snkhchyan"
+date: '2022-06-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+install.packages("remotes")
+library(remotes)
+install_github ("https://github.com/jimjam-slam/ggflags")
+
+
+
+
+eurovision <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-17/eurovision.csv')
+
+
+#looking at data
+
+glimpse(eurovision)
+head(eurovision)
+
+unique(eurovision$section)
+eurovision_finals <-  eurovision %>% filter (section=="grand-final" | section == "final")
+eurovision_finals
+
+eurovision_finals %>% filter(artist_country,winner=TRUE) %>% count(artist_country,year) %>% arrange(desc(n))
+
+
+eurvision_finals %>% mutate(winner_num=as.numeric(winner))
+
+group_by(artist_country,year) %>% summarise(wins=sum(winner_num))
+
+
+```
+```{r}
+
+eurovision$winner_int <- as.integer(eurovision$winner)
+
+#final and grand-final, agg by country
+
+unique(eurovision$section)
+
+#calculate avg points and rank, and toatl wins and year
+
+country_agg <- eurovision %>% filter(section=="final"|section=="grand-final"
+                                       ) %>% group_by(artist_country) %>% summarise(avg_points=mean(total_points,na.rm=TRUE),
+                                                                                    avg_rank=mean(rank,na.rm=TRUE),
+                                                                                    tot_wins=sum(winner_int,na.rm=TRUE),
+                                                                                    tot_years=n()) %>% arrange(desc(tot_wins)) %>% mutate(win_ratio=(tot_wins/tot_years)*100) %>% arrange(desc(win_ratio))
+
+country_agg
+
+library(forcats)
+
+country_agg %>% filter(tot_wins>0) %>% mutate(artist_country=fct_reorder(artist_country,win_ratio)) %>% ggplot(aes(x=win_ratio,y=artist_country))+geom_bar(stat="identity")
+                                              
+country_agg %>% filter(tot_wins>0) %>% ggplot(aes(x=avg_points,y-win_ratio,colour=artist_country))+geom_point()
+
+
+
+
+```
+
+
+```{r}
+
+flags <- eurovision_finals$country_emoji
+flags
+
+gsub (":flag_", "",x=flags)
+
+
+```
+
+
